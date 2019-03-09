@@ -4,11 +4,13 @@
 #include <time.h> // time()
 #include <math.h>
 #include <assert.h>
+#include <string.h>
 #include <gmp.h>
 
 #include "rsa.h"
+#include "utils.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 //// gets the greatest common divisor of x and y (Euclidean algorthm)
 //int gcd(int x, int y) {
@@ -23,6 +25,34 @@
 //	return gcd(b, a % b);
 //
 //}
+
+// each block is contained in a uint32_t integer
+uint32_t* msg_to_int(char* msg) {
+	printf("msg = %s\n", msg);
+	
+	int num_chars = strlen(msg);
+	int num_blocks = ceil((float)num_chars/4);
+	if(DEBUG) printf("num_blocks = %i\n", num_blocks);
+
+	uint32_t* blocks = (uint32_t*) malloc(num_blocks * sizeof(uint32_t));
+
+	for(int i=0; i<num_blocks; i++) {
+		uint32_t val = 0;
+		for(int c=3; c>=0; c--) { // block = ['S', 'a', 'm', '!' ], the first bit starts at the last character '!'
+			for(int b=0; b<8; b++) { // for each bit
+				uint32_t mask = 1 << ((3-c)*8 + b); // want to read the value at bit b
+				int idx = i*4 + c; // block_idx * 4
+				if(idx < num_chars) val = msg[idx] | mask;	
+				else printf("i=%i, c=%i, idx=%i\n", i, c, idx);
+			}	
+		}
+		blocks[i] = val;
+	}
+
+	if(DEBUG) print_bits32(blocks[0]);	
+	
+	return blocks;
+} 
 
 void mpz_print(char* name, mpz_t n) {
 	printf("%s = ", name);
