@@ -1,15 +1,13 @@
 CC=gcc
 CFLAGS=-Wall -g
-DEPS=rsa.h
-OBJ=rsa.o
 LIBS=-lgmp
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-rsa: main.o $(OBJ)
+prac: main.o $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean
 clean:
-	rm -f *.o rsa
+	rm -f *.o prac

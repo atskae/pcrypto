@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <time.h> // time()
 #include <math.h>
+#include <gmp.h>
 
 #include "rsa.h"
 
@@ -21,18 +22,23 @@ int gcd(int x, int y) {
 }
 
 // generates a 100-digit prime number
-uint64_t get_rand_prime() {
+mpz_t get_rand_prime() {
 	
 	srand(time(NULL));
 	
-	uint64_t p = 0;
+	mpz_t p;
+	mpz_init(p);
+
 	char done = 0;
+	char intStr[NUM_DIGITS_PQ];
 	while(!done) {
-		p = rand() + pow(10, 99); // 1 digit + 99 digits = 100 digits
-		if(p % 2 == 0) p++; // obtain an odd number
-		
+		for(int i=0; i<NUM_DIGITS_PQ; i++) {
+			intStr[i] = rand() % (57 - 48 + 1) + 48; // generates a random ascii-digit			
+		}
+		// make integer odd
+		if(intStr[NUM_DIGITS_PQ-1] % 2 == 0) intStr[NUM_DIGITS_PQ]++;
+	
 		// Check if p is prime (Solovay and Strassen algorithm)
-		uint64_t b = rand() % p;	
 	}
 		
 	return p;	
