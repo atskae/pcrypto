@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -g
-DEPS=rsa.h
-OBJ=rsa.o
+DEPS=rsa.h utils.h
+OBJ=rsa.o utils.o
 LIBS=-lgmp
 
 %.o: %.c $(DEPS)
