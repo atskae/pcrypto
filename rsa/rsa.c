@@ -12,19 +12,103 @@
 
 #define DEBUG 0
 
-//// gets the greatest common divisor of x and y (Euclidean algorthm)
-//int gcd(int x, int y) {
-//	
-//	// set a to the larger value between x and y
-//	int a = (x > y) ? x : y;
-//	int b = (x > y) ? y : x;
-//
-//	if(a == 0) return b;
-//	if(b == 0) return a;
-//
-//	return gcd(b, a % b);
-//
-//}
+// e is the multiplicative inverse of d mod (p-1)(q-1)
+void get_e(mpz_t e, mpz_t p, mpz_t q, mpz_t d) {
+	
+	// calculate (p-1) * (q-1)
+	
+	// (p-1)
+	mpz_t p1;
+	mpz_init(p1);
+	mpz_set(p1, p);
+	mpz_sub_ui(p1, p1, 1);
+	// (q-1)
+	mpz_t q1;
+	mpz_init(q1);
+	mpz_set(q1, q);
+	mpz_sub_ui(q1, q1, 1);
+	// (p-1) * (q-1)
+	mpz_t p1_q1;
+	mpz_init(p1_q1);
+	mpz_mul(p1_q1, p1, q1);
+
+	int flag = mpz_invert(e, d, p1_q1);
+	if(flag == 0) printf("Multiplicative inverse does not exist for given d.\n");
+	//else { // valid inverse ; check if correct
+	//
+	//	// (e * d) mod (p-1)(q-1)
+	//	mpz_t ed;
+	//	mpz_init(ed);
+	//	
+	//	mpz_set(ed, e);
+	//	mpz_mul(ed, ed, d);
+	//	mpz_mod(ed, ed, p1_q1);
+
+	//	int result = mpz_cmp_ui(ed, 1);
+	//	assert(result == 0); 
+
+	//	mpz_clear(ed);
+	//	
+	//}
+
+	// clean up
+	mpz_clear(p1);
+	mpz_clear(q1);	
+	mpz_clear(p1_q1);
+
+}
+
+// d is a random large integer which is relatively prime to (p-1)(q-1) ; gcd(d, (p-1)(q-1)) = 1
+void get_d(mpz_t d, mpz_t p, mpz_t q) {
+
+	// calculate (p-1) * (q-1)
+	
+	// (p-1)
+	mpz_t p1;
+	mpz_init(p1);
+	mpz_set(p1, p);
+	mpz_sub_ui(p1, p1, 1);
+	// (q-1)
+	mpz_t q1;
+	mpz_init(q1);
+	mpz_set(q1, q);
+	mpz_sub_ui(q1, q1, 1);
+	// (p-1) * (q-1)
+	mpz_t p1_q1;
+	mpz_init(p1_q1);
+	mpz_mul(p1_q1, p1, q1);
+
+	mpz_print("(p-1)(q-1)", p1_q1);
+	
+	while(1) {
+
+		mpz_set_ui(d, 0); // reset value to 0
+
+		char intStr[NUM_DIGITS_P + 1]; // +1 for null terminator
+		get_rand_intStr(intStr, NUM_DIGITS_P);
+		
+		int flag = mpz_set_str(d, intStr, 10);
+		assert(flag == 0); // non-zero = fail	
+		
+		mpz_t gcd;
+		mpz_init(gcd);
+
+		// calculate the gcd
+		mpz_gcd(gcd, d, p1_q1);	
+		int result = mpz_cmp_ui(gcd, 1);
+		
+		// clean up
+		mpz_clear(gcd);
+
+		if(result != 0) continue; // the gcd does not equal 1
+		else break;
+	}
+
+	// clean up
+	mpz_clear(p1);
+	mpz_clear(q1);	
+	mpz_clear(p1_q1);
+}
 
 // each block is contained in a uint32_t integer
 uint32_t* msg_to_int(char* msg, int* num_blocks) {
@@ -77,7 +161,7 @@ void get_rand_prime(mpz_t p) {
 	mpz_t b;
 	mpz_init(b);
 
-	char intStr[NUM_DIGITS_PQ + 1]; // string representation of int ; +1 null-terminator
+	char intStr[NUM_DIGITS_P + 1]; // string representation of int ; +1 null-terminator
 	uint64_t tries = 0;
 	while(1) {
 		tries++;
@@ -85,16 +169,13 @@ void get_rand_prime(mpz_t p) {
 	
 		mpz_set_ui(b, 0); // reset value to 0
 		
-		// generates 100 random digits
-		for(int i=0; i<NUM_DIGITS_PQ; i++) {
-			// (rand() % (upper - lower + 1)) + lower
-			intStr[i] = (char)(rand() % (ASCII_9 - ASCII_0 + 1)) + ASCII_0;	
-		}
-		intStr[NUM_DIGITS_PQ] = '\0';
+		// generate random digits
+		get_rand_intStr(intStr, NUM_DIGITS_P);
+		
 		// make integer odd
-		if(intStr[NUM_DIGITS_PQ-1] < ASCII_9) {
-			char ls_int = intStr[NUM_DIGITS_PQ-1]; // least significant int
-			if(ls_int % 2 == 0) intStr[NUM_DIGITS_PQ-1]++;	
+		if(intStr[NUM_DIGITS_P-1] < ASCII_9) {
+			char ls_int = intStr[NUM_DIGITS_P-1]; // least significant int
+			if(ls_int % 2 == 0) intStr[NUM_DIGITS_P-1]++;	
 		}
 
 		// create int
@@ -121,7 +202,7 @@ void get_rand_prime(mpz_t p) {
 		char is_prime = 1;
 		// Check if b is prime (Solovay and Strassen algorithm)
 		// generate random number a, 100 times ; if prime test passes for all 100 numbers, b is highly likely to be prime
-		for(int i=0; i<NUM_DIGITS_PQ; i++) {
+		for(int i=0; i<NUM_DIGITS_P; i++) {
 			mpz_urandomm(a, state, b); // generates a random number between 0-b
 
 			if(DEBUG) {
