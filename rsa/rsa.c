@@ -10,7 +10,7 @@
 #include "rsa.h"
 #include "utils.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 //// gets the greatest common divisor of x and y (Euclidean algorthm)
 //int gcd(int x, int y) {
@@ -27,30 +27,35 @@
 //}
 
 // each block is contained in a uint32_t integer
-uint32_t* msg_to_int(char* msg) {
-	printf("msg = %s\n", msg);
+uint32_t* msg_to_int(char* msg, int* num_blocks) {
 	
+	printf("msg = %s\n", msg);
+	//if(DEBUG) {
+		for(int i=0; i<strlen(msg); i++) {
+			print_bits8(msg[i]);
+		}
+	//}
+
 	int num_chars = strlen(msg);
-	int num_blocks = ceil((float)num_chars/4);
-	if(DEBUG) printf("num_blocks = %i\n", num_blocks);
+	*num_blocks = ceil((float)num_chars/4);
+	if(DEBUG) printf("num_blocks = %i, num_chars %i\n", (*num_blocks), num_chars);
 
-	uint32_t* blocks = (uint32_t*) malloc(num_blocks * sizeof(uint32_t));
+	uint32_t* blocks = (uint32_t*) malloc((*num_blocks) * sizeof(uint32_t));
 
-	for(int i=0; i<num_blocks; i++) {
+	for(int i=0; i<(*num_blocks); i++) {
 		uint32_t val = 0;
 		for(int c=3; c>=0; c--) { // block = ['S', 'a', 'm', '!' ], the first bit starts at the last character '!'
+			int idx = i*4 + c; // block_idx * 4
+			if(idx >= num_chars) continue;
 			for(int b=0; b<8; b++) { // for each bit
-				uint32_t mask = 1 << ((3-c)*8 + b); // want to read the value at bit b
-				int idx = i*4 + c; // block_idx * 4
-				if(idx < num_chars) val = msg[idx] | mask;	
-				else printf("i=%i, c=%i, idx=%i\n", i, c, idx);
+				unsigned int bit_val = msg[idx] & (1 << b);
+				if(bit_val > 0) bit_val = 1;
+				val |= (bit_val << ((3-c)*8 + b));
 			}	
 		}
 		blocks[i] = val;
 	}
 
-	if(DEBUG) print_bits32(blocks[0]);	
-	
 	return blocks;
 } 
 
