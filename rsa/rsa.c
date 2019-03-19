@@ -146,10 +146,20 @@ uint64_t* msg_to_int(char* msg, int* num_blocks, mpz_t pq) { // msg needs to be 
 				val |= mask;
 			}	
 		}
+		
 		// convert val to mpz_t
-			
-	
+		mpz_t val_temp;
+		mpz_init(val_temp);	
+		uint64_to_mpz(&val, val_temp);
+
+		// compute mod pq
+		mpz_mod(val_temp, val_temp, pq);
+
+		// convert back to val
+		val = mpz_to_uint64(val_temp);
+		
 		blocks[i] = val;
+		mpz_clear(val_temp);
 	}
 
 	return blocks;
