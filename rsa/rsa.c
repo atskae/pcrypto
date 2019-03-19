@@ -12,6 +12,12 @@
 
 #define DEBUG 0
 
+uint64_t* rsa_encrypt(uint64_t* blocks, int num_blocks, mpz_t e, mpz_t n) {
+	uint64_t* cipher_blocks = (uint64_t*) malloc(num_blocks * sizeof(uint64_t));
+	
+	return cipher_blocks;
+}
+
 // e is the multiplicative inverse of d mod (p-1)(q-1)
 void get_e(mpz_t e, mpz_t p, mpz_t q, mpz_t d) {
 	
@@ -110,8 +116,8 @@ void get_d(mpz_t d, mpz_t p, mpz_t q) {
 	mpz_clear(p1_q1);
 }
 
-// each block is contained in a uint32_t integer
-uint32_t* msg_to_int(char* msg, int* num_blocks) {
+// each block is contained in a uint64_t integer
+uint64_t* msg_to_int(char* msg, int* num_blocks, mpz_t pq) { // msg needs to be less than p*q = n
 	
 	printf("msg = %s\n", msg);
 	//if(DEBUG) {
@@ -121,22 +127,28 @@ uint32_t* msg_to_int(char* msg, int* num_blocks) {
 	//}
 
 	int num_chars = strlen(msg);
-	*num_blocks = ceil((float)num_chars/4);
+	*num_blocks = ceil( (float)num_chars/CHARS_PER_BLOCK );
 	if(DEBUG) printf("num_blocks = %i, num_chars %i\n", (*num_blocks), num_chars);
 
-	uint32_t* blocks = (uint32_t*) malloc((*num_blocks) * sizeof(uint32_t));
+	uint64_t* blocks = (uint64_t*) malloc((*num_blocks) * sizeof(uint64_t));
 
 	for(int i=0; i<(*num_blocks); i++) {
-		uint32_t val = 0;
-		for(int c=3; c>=0; c--) { // block = ['S', 'a', 'm', '!' ], the first bit starts at the last character '!'
-			int idx = i*4 + c; // block_idx * 4
-			if(idx >= num_chars) continue;
+		uint64_t val = 0;
+		for(int c=(CHARS_PER_BLOCK-1); c>=0; c--) { 
+			int idx = i*CHARS_PER_BLOCK + c;
+			if(idx >= num_chars) continue;	
+			//printf("idx=%i, char %c\n", idx, msg[idx]);
 			for(int b=0; b<8; b++) { // for each bit
-				unsigned int bit_val = msg[idx] & (1 << b);
+				uint64_t bit_val = msg[idx] & (1 << b);
 				if(bit_val > 0) bit_val = 1;
-				val |= (bit_val << ((3-c)*8 + b));
+				uint64_t mask = (bit_val << (((CHARS_PER_BLOCK-1)-c)*8 + b));
+				//print_bits64(mask);
+				val |= mask;
 			}	
 		}
+		// convert val to mpz_t
+			
+	
 		blocks[i] = val;
 	}
 

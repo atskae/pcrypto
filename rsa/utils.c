@@ -2,8 +2,24 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <gmp.h>
 
 #include "utils.h"
+
+// https://stackoverflow.com/questions/51601666/gmp-store-64-bit-interger-in-mpz-t-mpz-class-and-get-64-bit-integers-back?noredirect=1&lq=1	
+uint64_t mpz_to_uint64(mpz_t a) {
+	const size_t word_size = sizeof(uint64_t);
+	size_t word_count = 0;
+	void* out_raw = mpz_export(NULL, &word_count, 1, word_size, 0, 0, a);
+	if(word_count != 1) {
+		printf("mpz_to_uint64() failed.\n");
+	}
+	return *(uint64_t*) out_raw;
+}
+
+void uint64_to_mpz(uint64_t* n, mpz_t a) {
+	mpz_import(a, 1, 1, sizeof(uint64_t), 0, 0, n);
+}
 
 // this assumes that intStr has room for num_digit digits plus the null terminator... 
 void get_rand_intStr(char* intStr, int num_digits) {
@@ -28,11 +44,11 @@ void print_bits8(char n) {
 	printf("\n");
 }
 
-void print_bits32(uint32_t n) {
-	//printf("%u = ", n);
+void print_bits64(uint64_t n) {
+	printf("%-32llu: ", n);
 	printf("| ");
-	for(int i=31; i>=0; i--) {
-		if(n & (1 << i)) printf("1");
+	for(int i=63; i>=0; i--) {
+		if(n & (1ULL << i)) printf("1");
 		else printf("0");
 		if(i % 4 == 0) printf(" ");
 		if(i % 8 == 0) printf("| ");
@@ -40,9 +56,9 @@ void print_bits32(uint32_t n) {
 	printf("\n");
 }
 
-void print_blocks(uint32_t* blocks, int num_blocks) {
+void print_blocks(uint64_t* blocks, int num_blocks) {
 	for(int i=0; i<num_blocks; i++) {
-		printf("Block %i (%u): ", i, blocks[i]);
-		print_bits32(blocks[i]);
+		printf("Block %i ", i);
+		print_bits64(blocks[i]);
 	}
 }

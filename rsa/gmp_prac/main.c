@@ -20,6 +20,15 @@
 
 int main(int argc, char* argv[]) {
 	
+	/* test ; convert mpz_t to uint64_t */
+	uint64_t t = UINT64_MAX - 23;
+	printf("t=%llu\n", t);
+	mpz_t t2;
+	mpz_init(t2);
+	mpz_import(t2, 1, 1, sizeof(uint64_t), 0, 0, &t);
+	mpz_print("t2", t2);
+	// convert it back
+
 	// generate a random number
 	char intStr[NUM_DIGITS + 1]; // +1 null terminator
 	for(int i=0; i<NUM_DIGITS; i++) {

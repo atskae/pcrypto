@@ -10,12 +10,7 @@
 int main(int argc, char* argv[]) {
 	
 	printf("Hallo Welt! RSA los gehts!\n");
-	char* message = "Pajama Sam!";
-
-	// convert message to integer blocks
-	int num_blocks;
-	uint32_t* blocks = msg_to_int(message, &num_blocks);
-	print_blocks(blocks, num_blocks); // each block must be encrypted with rsa
+	char* message = "ab";
 
 	// generate two primes, p and q
 	clock_t start = clock();
@@ -45,9 +40,14 @@ int main(int argc, char* argv[]) {
 	mpz_sub_ui(pq, pq, 1);
 	mpz_print("p*q", pq);
 
+	// convert message to integer blocks
+	int num_blocks;
+	uint64_t* blocks = msg_to_int(message, &num_blocks, pq);
+	print_blocks(blocks, num_blocks); // each block must be encrypted with rsa
+
 	// the values of the blocks must be less than (p*q - 1)
 	for(int i=0; i<num_blocks; i++) {
-		uint32_t block = blocks[i];
+		uint64_t block = blocks[i];
 		int result = mpz_cmp_ui(pq, block);
 		if(result < 0) { // block values are larger than p*q
 			printf("%i digits for random prime is insufficient.\n", NUM_DIGITS_P);
@@ -64,6 +64,22 @@ int main(int argc, char* argv[]) {
 	mpz_init(e);
 	get_e(e, p, q, d);
 	mpz_print("e", e);	
+	
+	// n = p*q
+	mpz_t n;
+	mpz_init(n);
+	mpz_set(n, p);
+	mpz_mul(n, n, q);
+
+	// n must be less tha 2^64, since 64-bit blocks are used
+	int result = mpz_cmp_ui(n, UINT64_MAX);
+	if(result > 0) {
+		printf("p*q is too large. Must be less than 2^64 (block size)\n");
+		return 0;
+	}
+	
+	/* Let's encrypt! */
+	uint64_t* cipher_blocks = rsa_encrypt(blocks, num_blocks, e, n);
 
 	// clean up when done
 	mpz_clear(p);
@@ -73,6 +89,7 @@ int main(int argc, char* argv[]) {
 	mpz_clear(e);
 
 	free(blocks);
+	free(cipher_blocks);
 
 	return 0;
 }
