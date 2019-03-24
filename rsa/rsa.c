@@ -12,8 +12,52 @@
 
 #define DEBUG 0
 
-uint64_t* rsa_encrypt(uint64_t* blocks, int num_blocks, mpz_t e, mpz_t n) {
+uint64_t* rsa(int mode, uint64_t* blocks, int num_blocks, mpz_t e_or_d, mpz_t n) {
+	printf("rsa() ");
+	if(mode == ENCRYPT) printf("encrypt\n");
+	else if(mode == DECRYPT) printf("decrypt\n");
+
 	uint64_t* cipher_blocks = (uint64_t*) malloc(num_blocks * sizeof(uint64_t));
+
+	// will apply rsa to each block
+	for(int i=0; i<num_blocks; i++) {
+		
+		// convert block to mpz_t
+		uint64_t* block_uint64 = &blocks[i];
+		mpz_t block;
+		mpz_init(block);
+		uint64_to_mpz(block_uint64, block);
+
+		if(DEBUG) {
+			mpz_t expected;
+			mpz_init(expected);
+			mpz_powm(expected, block, e_or_d, n);
+			printf("Block %i ", i);
+			mpz_print("expected", expected);
+			
+			mpz_clear(expected);
+		}
+
+		// exponentiation by repeated squaring/multiplying
+		mpz_t C;
+		mpz_init(C);
+		mpz_set_ui(C, 1);
+
+		// go through each bit in e
+		for(int b=get_num_bits(e_or_d); b>=0; b--) {
+			mpz_powm_ui(C, C, 2, n); // C^2 mod n
+			int bit_val = mpz_tstbit(e_or_d, b);
+			if(bit_val) { // b == 1
+				mpz_mul(C, C, block); // C*M
+				mpz_mod(C, C, n); // C*M mod n
+			}
+		
+		}
+		cipher_blocks[i] = mpz_to_uint64(C); // C is the encrypted form of the block
+
+		mpz_clear(block);
+		mpz_clear(C);
+	}
 	
 	return cipher_blocks;
 }
@@ -116,8 +160,20 @@ void get_d(mpz_t d, mpz_t p, mpz_t q) {
 	mpz_clear(p1_q1);
 }
 
+char* int_to_msg(uint64_t* blocks, int num_blocks) {
+	int num_chars = num_blocks * 8; // 8 characters per block
+	char* msg = (char*) malloc(num_chars);
+	memset(msg, 0, num_chars);
+
+	//for(int i=0; i<num_blocks; i++) {
+	//	for(int c=)
+	//}
+
+	return msg;
+}
+
 // each block is contained in a uint64_t integer
-uint64_t* msg_to_int(char* msg, int* num_blocks, mpz_t pq) { // msg needs to be less than p*q = n
+uint64_t* msg_to_int(char* msg, int* num_blocks) { // msg needs to be less than p*q = n
 	
 	printf("msg = %s\n", msg);
 	//if(DEBUG) {
@@ -168,7 +224,7 @@ uint64_t* msg_to_int(char* msg, int* num_blocks, mpz_t pq) { // msg needs to be 
 void mpz_print(char* name, mpz_t n) {
 	printf("%s = ", name);
 	mpz_out_str(stdout, 10, n);	// print in base 10
-	printf("\n");
+	printf(" (%i bits, %i digits)\n", get_num_bits(n), get_num_digits(n));
 }
 
 // generates a 100-digit prime number, and sets it to p

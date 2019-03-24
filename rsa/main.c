@@ -47,15 +47,9 @@ int main(int argc, char* argv[]) {
 	mpz_mul(pq, p, q);
 	mpz_print("p*q", pq);
 
-	int num_bits = get_num_bits(pq);
-	int num_digits = get_num_digits(pq);
-	printf("p (%i bits, %i digits)\n", get_num_bits(p), get_num_digits(p));	
-	printf("q (%i bits, %i digits)\n", get_num_bits(q), get_num_digits(q));
-	printf("pq (%i bits, %i digits)\n", num_bits, num_digits);
-
 	// convert message to integer blocks
 	int num_blocks;
-	uint64_t* blocks = msg_to_int(message, &num_blocks, pq);
+	uint64_t* blocks = msg_to_int(message, &num_blocks);
 	print_blocks(blocks, num_blocks); // each block must be encrypted with rsa
 
 	// the values of the blocks must be less than (p*q - 1)
@@ -83,6 +77,7 @@ int main(int argc, char* argv[]) {
 	mpz_init(n);
 	mpz_set(n, p);
 	mpz_mul(n, n, q);
+	mpz_print("n", n);	
 
 	// n must be less tha 2^64, since 64-bit blocks are used
 	int result = mpz_cmp_ui(n, UINT64_MAX);
@@ -90,9 +85,14 @@ int main(int argc, char* argv[]) {
 		printf("p*q is too large. Must be less than 2^64 (block size)\n");
 		return 0;
 	}
-	
+
 	/* Let's encrypt! */
-	uint64_t* cipher_blocks = rsa_encrypt(blocks, num_blocks, e, n);
+	uint64_t* cipher_blocks = rsa(ENCRYPT, blocks, num_blocks, e, n);
+	print_blocks(cipher_blocks, num_blocks); // each block must be encrypted with rsa
+
+	/* Let's decrypt! */
+	uint64_t* plaintext_blocks = rsa(DECRYPT, cipher_blocks, num_blocks, d, n);
+	print_blocks(plaintext_blocks, num_blocks); // each block must be encrypted with rsa
 
 	// clean up when done
 	mpz_clear(p);

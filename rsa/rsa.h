@@ -6,8 +6,12 @@
 #define BLOCK_SIZE_BITS 64
 #define CHARS_PER_BLOCK (BLOCK_SIZE_BITS / 8)
 
-uint64_t* rsa_encrypt(uint64_t* blocks, int num_blocks, mpz_t e, mpz_t n);
-uint64_t* msg_to_int(char* msg, int* num_blocks, mpz_t pq);
+#define ENCRYPT 0
+#define DECRYPT 1
+
+uint64_t* rsa(int mode, uint64_t* blocks, int num_blocks, mpz_t e_or_d, mpz_t n);
+char* int_to_msg(uint64_t* blocks, int num_blocks);
+uint64_t* msg_to_int(char* msg, int* num_blocks);
 void mpz_print(char* name, mpz_t n);
 void get_rand_prime(mpz_t p);
 void get_d(mpz_t d, mpz_t p, mpz_t q);
