@@ -10,7 +10,7 @@
 int main(int argc, char* argv[]) {
 	
 	printf("Hallo Welt! RSA los gehts!\n");
-	char* message = "ab";
+	char* message = "hello";
 
 	// generate two primes, p and q
 	clock_t start = clock();
@@ -23,6 +23,14 @@ int main(int argc, char* argv[]) {
 	while(1) {
 		get_rand_prime(p);	
 		get_rand_prime(q);
+
+	
+		mpz_t pq;
+		mpz_init(pq);
+		mpz_mul(pq, p, q);
+		int num_bits = get_num_bits(pq);	
+		mpz_clear(pq);
+		if(num_bits != 64) continue; // 64-bit blocks
 
 		int result = mpz_cmp(p, q);
 		if(result == 0) continue; // must be different primes 
@@ -37,8 +45,13 @@ int main(int argc, char* argv[]) {
 	mpz_t pq;
 	mpz_init(pq);
 	mpz_mul(pq, p, q);
-	mpz_sub_ui(pq, pq, 1);
 	mpz_print("p*q", pq);
+
+	int num_bits = get_num_bits(pq);
+	int num_digits = get_num_digits(pq);
+	printf("p (%i bits, %i digits)\n", get_num_bits(p), get_num_digits(p));	
+	printf("q (%i bits, %i digits)\n", get_num_bits(q), get_num_digits(q));
+	printf("pq (%i bits, %i digits)\n", num_bits, num_digits);
 
 	// convert message to integer blocks
 	int num_blocks;

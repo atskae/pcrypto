@@ -12,6 +12,8 @@ void print_bits8(char n);
 void print_bits64(uint64_t n);
 void print_blocks(uint64_t* blocks, int num_blocks);
 
+int get_num_digits(mpz_t n);
+int get_num_bits(mpz_t n);
 void uint64_to_mpz(uint64_t* n, mpz_t a);
 uint64_t mpz_to_uint64(mpz_t a);
 void get_rand_intStr(char* intStr, int num_digits);

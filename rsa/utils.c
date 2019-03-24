@@ -6,6 +6,14 @@
 
 #include "utils.h"
 
+int get_num_digits(mpz_t n) {
+	return mpz_sizeinbase(n, 10);
+}
+
+int get_num_bits(mpz_t n) {
+	return mpz_sizeinbase(n, 2);
+}
+
 // https://stackoverflow.com/questions/51601666/gmp-store-64-bit-interger-in-mpz-t-mpz-class-and-get-64-bit-integers-back?noredirect=1&lq=1	
 uint64_t mpz_to_uint64(mpz_t a) {
 	const size_t word_size = sizeof(uint64_t);
