@@ -161,13 +161,20 @@ void get_d(mpz_t d, mpz_t p, mpz_t q) {
 }
 
 char* int_to_msg(uint64_t* blocks, int num_blocks) {
-	int num_chars = num_blocks * 8; // 8 characters per block
+	int num_chars = num_blocks * CHARS_PER_BLOCK; // 8 characters per block
 	char* msg = (char*) malloc(num_chars);
 	memset(msg, 0, num_chars);
 
-	//for(int i=0; i<num_blocks; i++) {
-	//	for(int c=)
-	//}
+	for(int i=0; i<num_blocks; i++) {
+		uint64_t block = blocks[i];
+		for(int c=(CHARS_PER_BLOCK-1); c>=0; c--) {
+			uint64_t mask = 0xFF;
+			mask = mask << (c*8);
+			unsigned char msg_char = ((block & mask) >> (c*8));	
+			int idx = i*CHARS_PER_BLOCK + (CHARS_PER_BLOCK - (c+1));
+			msg[idx] = msg_char;
+		}
+	}
 
 	return msg;
 }

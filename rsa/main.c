@@ -10,7 +10,7 @@
 int main(int argc, char* argv[]) {
 	
 	printf("Hallo Welt! RSA los gehts!\n");
-	char* message = "hello";
+	char* message = "Pajama Sam";
 
 	// generate two primes, p and q
 	clock_t start = clock();
@@ -89,10 +89,15 @@ int main(int argc, char* argv[]) {
 	/* Let's encrypt! */
 	uint64_t* cipher_blocks = rsa(ENCRYPT, blocks, num_blocks, e, n);
 	print_blocks(cipher_blocks, num_blocks); // each block must be encrypted with rsa
+	char* encrypted= int_to_msg(cipher_blocks, num_blocks);
+	printf("Encrypted: %s\n", encrypted);
 
 	/* Let's decrypt! */
 	uint64_t* plaintext_blocks = rsa(DECRYPT, cipher_blocks, num_blocks, d, n);
 	print_blocks(plaintext_blocks, num_blocks); // each block must be encrypted with rsa
+
+	char* decrypted = int_to_msg(plaintext_blocks, num_blocks);
+	printf("Decrypted: %s\n", decrypted);
 
 	// clean up when done
 	mpz_clear(p);
