@@ -20,8 +20,9 @@ int main() {
 
 	step = 1.0/(double)NUM_STEPS;
 
-	omp_set_num_threads(NUM_THREADS);
-	#pragma omp parallel
+	omp_set_num_threads(NUM_THREADS);	
+	double start = omp_get_wtime();
+    #pragma omp parallel
 	{	
 		int id = omp_get_thread_num();	
 		double x, tsum=0.0;
@@ -37,8 +38,9 @@ int main() {
 	for(i=0; i<NUM_THREADS; i++) {
 		sum += sums[i];
 	}
-	pi = step * sum;
-	printf("Result: %f\n", pi);
+	pi = step * sum;	
+    double elapsed = omp_get_wtime() - start; 
+	printf("Result: %f (%.5f sec)\n", pi, elapsed);
 	
 	return 0;
 }
