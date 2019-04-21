@@ -6,6 +6,22 @@
 
 #include "utils.h"
 
+double get_seconds(double clock_ticks) {
+    return clock_ticks / CLOCKS_PER_SEC;
+}
+
+char is_correct(char* orig_msg, char* decrypted, int num_chars) {
+    char correct = 1;
+    for(int c=0; c<num_chars; c++) {
+        if(orig_msg[c] != decrypted[c]) {
+            correct = 0;
+            break;
+        }
+    }
+
+    return correct;
+}
+
 int get_num_digits(mpz_t n) {
 	return mpz_sizeinbase(n, 10);
 }

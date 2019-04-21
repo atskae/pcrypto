@@ -7,6 +7,29 @@
 #define ASCII_0 48
 #define ASCII_9 57
 
+// statistics for sequential and parallel
+// source: http://www.linux-pages.com/2013/02/how-to-map-enum-to-strings-in-c/
+// to add statistics, write ADD_STAT() to stats.h
+#undef  ADD_STAT
+#define ADD_STAT( _etype, _desc ) _etype
+enum
+{
+    #include "stats.h"
+    NUM_STATS
+};
+#undef ADD_STAT
+
+#undef ADD_STAT
+#define ADD_STAT( _etype, _desc ) _desc
+static const char* all_stats[NUM_STATS] =
+{
+    #include "stats.h"
+};
+#undef ADD_STAT
+
+double get_seconds(double clock_ticks);
+char is_correct(char* orig_msg, char* decrypted, int num_chars);
+
 void print_elapsed(char* msg, clock_t start, clock_t stop);
 void print_bits8(char n);
 void print_bits64(uint64_t n);
