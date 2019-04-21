@@ -39,7 +39,7 @@ void get_rand_intStr(char* intStr, int num_digits) {
 }
 
 void print_elapsed(char* msg, clock_t start, clock_t stop) {
-	printf("%s: %.2f sec\n", msg, ( (double)(stop-start) ) / CLOCKS_PER_SEC); 
+	printf("%s: %.5f sec\n", msg, ( (double)(stop-start) ) / CLOCKS_PER_SEC); 
 }
 
 void print_bits8(char n) {

@@ -3,18 +3,17 @@
 #include <time.h> // time()
 #include <stdint.h>
 #include <gmp.h>
+#include <omp.h>
 
-#include "rsa.h"
+#include "rsa_p.h"
 #include "utils.h"
 
 int main(int argc, char* argv[]) {
 	
 	printf("Hallo Welt! RSA los gehts!\n");
-	//char* message = "Pajama Sam";
-  
 	char* message = "Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam";
-	
-    // generate two primes, p and q
+
+	// generate two primes, p and q
 	clock_t start = clock();
 	mpz_t p;
 	mpz_init(p);	
@@ -25,7 +24,6 @@ int main(int argc, char* argv[]) {
 	while(1) {
 		get_rand_prime(p);	
 		get_rand_prime(q);
-
 	
 		mpz_t pq;
 		mpz_init(pq);
@@ -52,7 +50,7 @@ int main(int argc, char* argv[]) {
 	// convert message to integer blocks
 	int num_blocks;
 	uint64_t* blocks = msg_to_int(message, &num_blocks);
-	print_blocks(blocks, num_blocks); // each block must be encrypted with rsa
+	//print_blocks(blocks, num_blocks); // each block must be encrypted with rsa
 
 	// the values of the blocks must be less than (p*q - 1)
 	for(int i=0; i<num_blocks; i++) {
@@ -89,11 +87,14 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* Let's encrypt! */
-	start = clock();
+	//start = clock();
+    double start_time = omp_get_wtime();
     uint64_t* cipher_blocks = rsa(ENCRYPT, blocks, num_blocks, e, n);
-	print_blocks(cipher_blocks, num_blocks); // each block must be encrypted with rsa
+	//print_blocks(cipher_blocks, num_blocks); // each block must be encrypted with rsa
 	char* encrypted= int_to_msg(cipher_blocks, num_blocks);
-	print_elapsed("Encryption", start, clock());	
+    double elapsed = omp_get_wtime() - start_time;	
+    printf("Encryption :%.5f sec\n", elapsed);
+    //print_elapsed("Encryption", start, clock());	
     printf("Encrypted: %s\n", encrypted);
 
 	/* Let's decrypt! */
