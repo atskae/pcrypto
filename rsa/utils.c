@@ -2,9 +2,55 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <gmp.h>
+#include <omp.h>
 
 #include "utils.h"
+
+char* get_message(char* text_file) {
+    
+    FILE* t = fopen(text_file, "r");
+    if(!t) {
+        printf("%s was not found.\n", text_file);
+        return NULL;
+    }
+ 	    
+    // get file size
+    fseek(t, 0, SEEK_END);
+    long int num_bytes = ftell(t);
+    
+    // copy file contents
+    rewind(t);
+    char* message = (char*) malloc(num_bytes + 1);
+    memset(message, 0, num_bytes + 1);
+    fread(message, num_bytes, 1, t);   
+    fclose(t);
+
+    return message;
+}
+
+void print_stats(double* s_stats, double* p_stats) {
+
+    double s_total = 0.0;
+    double p_total = 0.0;
+
+    printf("%64s %16s %16s %16s\n", "stat", "sequential", "parallel", "faster");
+    printf("%64s %16s %16s %16s\n", "-----", "-----", "-----", "-----");     
+    for(int i=0; i<NUM_STATS; i++) {
+        double s = s_stats[i];
+        double p = p_stats[i];
+
+        char faster = (s < p) ? 's' : 'p';
+        printf("%64s %16.8f %16.8f %16c\n", all_stats[i], s, p, faster);
+    
+        s_total += s;
+        p_total += p;
+    }
+    printf("%64s\n", "-----");
+    printf("%64s %16.8f %16.8f %16c\n", "TOTAL TIME", s_total, p_total, (s_total < p_total) ? 's' : 'p');
+
+}
 
 double get_seconds(double clock_ticks) {
     return clock_ticks / CLOCKS_PER_SEC;
@@ -69,7 +115,7 @@ void print_bits8(char n) {
 }
 
 void print_bits64(uint64_t n) {
-	printf("%-32llu: ", n);
+	printf("%-32lu: ", n);
 	printf("| ");
 	for(int i=63; i>=0; i--) {
 		if(n & (1ULL << i)) printf("1");
@@ -86,3 +132,19 @@ void print_blocks(uint64_t* blocks, int num_blocks) {
 		print_bits64(blocks[i]);
 	}
 }
+
+/* Parallel */
+
+// this assumes that intStr has room for num_digit digits plus the null terminator... 
+void p_get_rand_intStr(char* intStr, int num_digits) {
+    
+    omp_set_num_threads(2);
+    #pragma omp parallel for
+    for(int i=0; i<num_digits; i++) {
+		// (rand() % (upper - lower + 1)) + lower
+		intStr[i] = (char)(rand() % (ASCII_9 - ASCII_0 + 1)) + ASCII_0;	
+	}
+	intStr[num_digits] = '\0';
+
+}
+

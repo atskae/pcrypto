@@ -10,12 +10,36 @@
 
 int main(int argc, char* argv[]) {
 
-    // statistics
+    char* text = NULL;
+    if(argc > 1) {
+        text = argv[1]; 
+    }
+
     double s_stats[NUM_STATS] = {-1};
     double p_stats[NUM_STATS] = {-1};
     clock_t start, end;
  
-	char* message = "Pajama Sam";
+	char* message = "Pajama Sam"; // default plain text
+    if(text) {
+        FILE* t = fopen(text, "r");
+        if(t) {
+            // get file size
+            fseek(t, 0, SEEK_END);
+            long int num_bytes = ftell(t);
+            
+            // copy file contents
+            rewind(t);
+            message = (char*) malloc(num_bytes + 1);
+            memset(message, 0, num_bytes + 1);
+            fread(message, num_bytes, 1, t);   
+            fclose(t);
+            
+            //printf("Message obtained:\n%s\n(%lu bytes)\n", message, num_bytes);
+
+        } else {
+            printf("%s was not found.\n", text);
+        }
+    }
 	
     // generate two primes, p and q
 	mpz_t p;
@@ -42,7 +66,23 @@ int main(int argc, char* argv[]) {
 
 	// convert message to integer blocks
 	int num_blocks;
-	uint64_t* blocks = msg_to_int(message, &num_blocks);
+	uint64_t* blocks;
+
+    // sequential
+    start = clock();
+    blocks = msg_to_int(message, &num_blocks);
+    end = clock();
+    s_stats[STAT_MSG_TO_INT] = get_seconds(end - start);
+
+    free(blocks);
+
+    // parallel
+    start = clock();
+    blocks = p_msg_to_int(message, &num_blocks);
+    end = clock();
+    p_stats[STAT_MSG_TO_INT] = get_seconds(end - start);
+
+    printf("%i message blocks (%lu bytes)\n", num_blocks, strlen(message));
 
 	// the values of the blocks must be less than (p*q - 1)
 	for(int i=0; i<num_blocks; i++) {
@@ -129,24 +169,7 @@ int main(int argc, char* argv[]) {
 	free(blocks);
 	free(cipher_blocks);
 
-    // print statistics
-    double s_total = 0.0;
-    double p_total = 0.0;
-
-    printf("%64s %16s %16s %16s\n", "stat", "sequential", "parallel", "faster");
-    printf("%64s %16s %16s %16s\n", "-----", "-----", "-----", "-----");     
-    for(int i=0; i<NUM_STATS; i++) {
-        double s = s_stats[i];
-        double p = p_stats[i];
-
-        char faster = (s < p) ? 's' : 'p';
-        printf("%64s %16.8f %16.8f %16c\n", all_stats[i], s, p, faster);
-    
-        s_total += s;
-        p_total += p;
-    }
-    printf("%64s\n", "-----");
-    printf("%64s %16.8f %16.8f %16c\n", "TOTAL TIME", s_total, p_total, (s_total < p_total) ? 's' : 'p');
+    print_stats(s_stats, p_stats);
 
 	return 0;
 }

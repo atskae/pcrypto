@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <string.h>
 #include <gmp.h>
+#include <omp.h>
 
 #include "rsa.h"
 #include "utils.h"
@@ -13,9 +14,9 @@
 #define DEBUG 0
 
 uint64_t* rsa(int mode, uint64_t* blocks, int num_blocks, mpz_t e_or_d, mpz_t n) {
-	printf("rsa() ");
-	if(mode == ENCRYPT) printf("encrypt\n");
-	else if(mode == DECRYPT) printf("decrypt\n");
+	//printf("rsa() ");
+	//if(mode == ENCRYPT) printf("encrypt\n");
+	//else if(mode == DECRYPT) printf("decrypt\n");
 
 	uint64_t* cipher_blocks = (uint64_t*) malloc(num_blocks * sizeof(uint64_t));
 
@@ -84,22 +85,6 @@ void get_e(mpz_t e, mpz_t p, mpz_t q, mpz_t d) {
 
 	int flag = mpz_invert(e, d, p1_q1);
 	if(flag == 0) printf("Multiplicative inverse does not exist for given d.\n");
-	//else { // valid inverse ; check if correct
-	//
-	//	// (e * d) mod (p-1)(q-1)
-	//	mpz_t ed;
-	//	mpz_init(ed);
-	//	
-	//	mpz_set(ed, e);
-	//	mpz_mul(ed, ed, d);
-	//	mpz_mod(ed, ed, p1_q1);
-
-	//	int result = mpz_cmp_ui(ed, 1);
-	//	assert(result == 0); 
-
-	//	mpz_clear(ed);
-	//	
-	//}
 
 	// clean up
 	mpz_clear(p1);
@@ -182,7 +167,7 @@ char* int_to_msg(uint64_t* blocks, int num_blocks) {
 // each block is contained in a uint64_t integer
 uint64_t* msg_to_int(char* msg, int* num_blocks) { // msg needs to be less than p*q = n
 	
-	printf("msg = %s\n", msg);
+	//printf("msg = %s\n", msg);
 	if(DEBUG) {
 		for(int i=0; i<strlen(msg); i++) {
 			print_bits8(msg[i]);
@@ -209,20 +194,8 @@ uint64_t* msg_to_int(char* msg, int* num_blocks) { // msg needs to be less than 
 				val |= mask;
 			}	
 		}
-		
-		// convert val to mpz_t
-		//mpz_t val_temp;
-		//mpz_init(val_temp);	
-		//uint64_to_mpz(&val, val_temp);
-
-		//// compute mod pq
-		//mpz_mod(val_temp, val_temp, pq);
-
-		//// convert back to val
-		//val = mpz_to_uint64(val_temp);
-		
+				
 		blocks[i] = val;
-		//mpz_clear(val_temp);
 	}
 
 	return blocks;
@@ -246,11 +219,28 @@ void get_rand_prime(mpz_t p) {
 	mpz_t b;
 	mpz_init(b);
 
+	// random integer to test against n
+	mpz_t a;
+	mpz_init(a);	
+	
+	mpz_t gcd;
+	mpz_init(gcd);
+
+	mpz_t jacobi_sym;
+	mpz_init(jacobi_sym); 
+
+	// the value to compare the calculated Jacobi symbol to
+	mpz_t j_ab;
+	mpz_init(j_ab);
+	
+    mpz_t exp;
+	mpz_init(exp);
+
 	char intStr[NUM_DIGITS_P + 1]; // string representation of int ; +1 null-terminator
 	uint64_t tries = 0;
 	while(1) {
 		tries++;
-		if(DEBUG) printf("===Try %llu===\n", tries);
+		if(DEBUG) printf("===Try %lu===\n", tries);
 	
 		mpz_set_ui(b, 0); // reset value to 0
 		
@@ -267,23 +257,7 @@ void get_rand_prime(mpz_t p) {
 		int flag = mpz_set_str(b, intStr, 10);
 		assert(flag == 0); // non-zero = fail	
 		if(DEBUG) mpz_print("b", b);
-
-		// random integer to test against n
-		mpz_t a;
-		mpz_init(a);	
-		
-		mpz_t gcd;
-		mpz_init(gcd);
-
-		mpz_t jacobi_sym;
-		mpz_init(jacobi_sym); 
-
-		// the value to compare the calculated Jacobi symbol to
-		mpz_t j_ab;
-		mpz_init(j_ab);
-		mpz_t exp; // 
-		mpz_init(exp);
-
+	
 		char is_prime = 1;
 		// Check if b is prime (Solovay and Strassen algorithm)
 		// generate random number a, 100 times ; if prime test passes for all 100 numbers, b is highly likely to be prime
@@ -319,25 +293,16 @@ void get_rand_prime(mpz_t p) {
 	
 			mpz_powm(j_ab, a, exp, b); // a^{(b-1)/2} mod b
 			if(DEBUG) mpz_print("a^exp mod b", j_ab);
-			result = mpz_cmp(jacobi_sym, j_ab);
+			
+            result = mpz_cmp(jacobi_sym, j_ab);
 			if(result != 0) {
 				is_prime = 0;
 				break;
 			}
 		}
 	
-		if(tries % 100000 == 0) printf("%llu tries\n", tries);
-		if(!is_prime) continue;
-		
-		// at this point, we got a prime
-
-		// don't need these anymore ; clean up to prevent memory leaks
-		mpz_clear(a);
-		mpz_clear(gcd);
-		mpz_clear(jacobi_sym);
-		mpz_clear(j_ab);
-		mpz_clear(exp);
-		break;
+		if(tries % 100000 == 0) printf("%lu tries\n", tries);
+		if(is_prime) break; 
 	}
 	
 	// b is prime! set to p
@@ -345,6 +310,11 @@ void get_rand_prime(mpz_t p) {
 	
 	// clean up to prevent memory leaks
 	mpz_clear(b);
+	mpz_clear(a);
+	mpz_clear(gcd);
+	mpz_clear(jacobi_sym);
+	mpz_clear(j_ab);
+	mpz_clear(exp);
 	gmp_randclear(state);
 }
 
@@ -371,15 +341,17 @@ void get_p_q(mpz_t p, mpz_t q) {
 }
 
 uint64_t* p_rsa(int mode, uint64_t* blocks, int num_blocks, mpz_t e_or_d, mpz_t n) {
-	printf("p_rsa() ");
-	if(mode == ENCRYPT) printf("encrypt\n");
-	else if(mode == DECRYPT) printf("decrypt\n");
+	//printf("p_rsa() ");
+	//if(mode == ENCRYPT) printf("encrypt\n");
+	//else if(mode == DECRYPT) printf("decrypt\n");
 
 	uint64_t* cipher_blocks = (uint64_t*) malloc(num_blocks * sizeof(uint64_t));
 
 	// will apply rsa to each block
-    //omp_set_num_threads(NUM_THREADS);
-    omp_set_num_threads(num_blocks);	
+    //int num_threads = num_blocks/BLOCKS_PER_THREAD + 1;
+    int num_threads = num_blocks;
+    omp_set_num_threads(num_threads); 
+    //printf("%i threads requested\n", num_threads);
 
     #pragma omp parallel for
     for(int i=0; i<num_blocks; i++) {
@@ -439,13 +411,14 @@ void p_get_rand_prime(mpz_t p) {
 	uint64_t tries = 0;
 	while(1) {
 		tries++;
-		if(DEBUG) printf("===Try %llu===\n", tries);
+		if(DEBUG) printf("===Try %lu===\n", tries);
 	
 		mpz_set_ui(b, 0); // reset value to 0
 		
 		// generate random digits
 		get_rand_intStr(intStr, NUM_DIGITS_P);
-		
+		//p_get_rand_intStr(intStr, NUM_DIGITS_P); // might be overkill
+	
 		// make integer odd
 		if(intStr[NUM_DIGITS_P-1] < ASCII_9) {
 			char ls_int = intStr[NUM_DIGITS_P-1]; // least significant int
@@ -477,7 +450,8 @@ void p_get_rand_prime(mpz_t p) {
     		// the value to compare the calculated Jacobi symbol to
     		mpz_t j_ab;
     		mpz_init(j_ab);
-    		mpz_t exp; 
+    		
+            mpz_t exp; 
     		mpz_init(exp);
            
             #pragma omp for
@@ -497,8 +471,6 @@ void p_get_rand_prime(mpz_t p) {
 		    	if(result != 0) { // the gcd does not equal 1
 		    		prime_test |= (1 << i);
 		    		continue;
-                    //is_prime = 0;
-                    //break;
 		    	}
 
 		    	if(DEBUG) mpz_print("gcd of a and b", gcd);
@@ -521,8 +493,6 @@ void p_get_rand_prime(mpz_t p) {
 		    	if(result != 0) {
                     prime_test |= (1 << i);
 		    		continue;
-                    //is_prime = 0;
-		    		//break;
 		    	}
 		    }
             
@@ -534,15 +504,10 @@ void p_get_rand_prime(mpz_t p) {
 
         } // #pragma omp parallel
 	
-		if(tries % 100000 == 0) printf("%llu tries\n", tries);
-		if(prime_test != 0) continue;
-        //if(!is_prime) continue;
+		if(tries % 100000 == 0) printf("%lu tries\n", tries);
+		if(prime_test == 0) break; // is a prime	
 		
-		// at this point, we got a prime
-
-		// don't need these anymore ; clean up to prevent memory leaks
-	    break;
-	}
+	} // while(1) ; end
 	
 	// b is prime! set to p
 	mpz_set(p, b);
@@ -566,11 +531,43 @@ void p_get_p_q(mpz_t p, mpz_t q) {
 
 		int result = mpz_cmp(p, q);
 		if(result == 0) continue; // must be different primes 
-		else {
-			//mpz_print("p", p);			
-			//mpz_print("q", q);		
-            break;
-		}
+		else break;
 	}
 }
+
+// each block is contained in a uint64_t integer
+uint64_t* p_msg_to_int(char* msg, int* num_blocks) { // msg needs to be less than p*q = n
+	
+	//printf("msg = %s\n", msg);
+	if(DEBUG) {
+		for(int i=0; i<strlen(msg); i++) {
+			print_bits8(msg[i]);
+		}
+	}
+
+	int num_chars = strlen(msg);
+	*num_blocks = ceil( (float)num_chars/CHARS_PER_BLOCK );
+	if(DEBUG) printf("num_blocks = %i, num_chars %i\n", (*num_blocks), num_chars);
+
+	uint64_t* blocks = (uint64_t*) malloc((*num_blocks) * sizeof(uint64_t));
+
+    #pragma omp parallel for
+	for(int i=0; i<(*num_blocks); i++) {
+		uint64_t val = 0;
+		for(int c=(CHARS_PER_BLOCK-1); c>=0; c--) { 
+			int idx = i*CHARS_PER_BLOCK + c;
+			if(idx >= num_chars) continue;	
+			for(int b=0; b<8; b++) { // for each bit
+				uint64_t bit_val = msg[idx] & (1 << b);
+				if(bit_val > 0) bit_val = 1;
+				uint64_t mask = (bit_val << (((CHARS_PER_BLOCK-1)-c)*8 + b));
+				val |= mask;
+			}	
+		}
+		
+		blocks[i] = val;
+	}
+
+	return blocks;
+} 
 

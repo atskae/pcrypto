@@ -9,6 +9,8 @@
 #define ENCRYPT 0
 #define DECRYPT 1
 
+#define BLOCKS_PER_THREAD 256
+
 /* Sequential */
 uint64_t* rsa(int mode, uint64_t* blocks, int num_blocks, mpz_t e_or_d, mpz_t n);
 char* int_to_msg(uint64_t* blocks, int num_blocks);
@@ -23,5 +25,6 @@ void get_p_q(mpz_t p, mpz_t q);
 uint64_t* p_rsa(int mode, uint64_t* blocks, int num_blocks, mpz_t e_or_d, mpz_t n);
 void p_get_rand_prime(mpz_t p);
 void p_get_p_q(mpz_t p, mpz_t q);
+uint64_t* p_msg_to_int(char* msg, int* num_blocks);
 
 #endif // RSA_H

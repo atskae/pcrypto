@@ -27,6 +27,8 @@ static const char* all_stats[NUM_STATS] =
 };
 #undef ADD_STAT
 
+char* get_message(char* text_file);
+void print_stats(double* s_stats, double* p_stats);
 double get_seconds(double clock_ticks);
 char is_correct(char* orig_msg, char* decrypted, int num_chars);
 
@@ -40,5 +42,8 @@ int get_num_bits(mpz_t n);
 void uint64_to_mpz(uint64_t* n, mpz_t a);
 uint64_t mpz_to_uint64(mpz_t a);
 void get_rand_intStr(char* intStr, int num_digits);
+
+/* Parallel */
+void p_get_rand_intStr(char* intStr, int num_digits);
 
 #endif // UTILS_H
