@@ -23,12 +23,14 @@ int main(int argc, char* argv[]) {
 	
 	mpz_t q;
 	mpz_init(q);	
-    
+
+    // sequential    
 	start = clock();
     get_p_q(p, q);
 	end = clock();
     s_stats[STAT_GET_PQ] = get_seconds(end - start);
 
+    // parallel
     start = clock();
     p_get_p_q(p, q);
     end = clock();
@@ -37,7 +39,6 @@ int main(int argc, char* argv[]) {
 	mpz_t pq;
 	mpz_init(pq);
 	mpz_mul(pq, p, q);
-	//mpz_print("p*q", pq);
 
 	// convert message to integer blocks
 	int num_blocks;
@@ -75,15 +76,15 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* Let's encrypt! */
+    uint64_t* cipher_blocks;
+    char* encrypted;
 	
     // sequential
     start = clock();
-    uint64_t* cipher_blocks = rsa(ENCRYPT, blocks, num_blocks, e, n);
-	char* encrypted = int_to_msg(cipher_blocks, num_blocks);
+    cipher_blocks = rsa(ENCRYPT, blocks, num_blocks, e, n);
+	encrypted = int_to_msg(cipher_blocks, num_blocks);
 	end = clock();
-    print_elapsed("Encryption Sequential", start, end);	
     s_stats[STAT_ENCRYPT] = get_seconds(end - start);
-    //printf("Encrypted: %s\n", encrypted);
     
     free(cipher_blocks);
     free(encrypted);
@@ -93,9 +94,7 @@ int main(int argc, char* argv[]) {
     cipher_blocks = p_rsa(ENCRYPT, blocks, num_blocks, e, n);
     encrypted = int_to_msg(cipher_blocks, num_blocks);
     end = clock();
-    print_elapsed("Encryption Parallel", start, end);	
     p_stats[STAT_ENCRYPT] = get_seconds(end - start);
-    //printf("Encrypted: %s\n", encrypted);
 
 	/* Let's decrypt! */
     uint64_t* plaintext_blocks;
@@ -131,12 +130,11 @@ int main(int argc, char* argv[]) {
 	free(cipher_blocks);
 
     // print statistics
-    printf("%64s %16s %16s %16s\n", "stat", "sequential", "parallel", "faster");
-    printf("%64s %16s %16s %16s\n", "-----", "-----", "-----", "-----");
-    
     double s_total = 0.0;
     double p_total = 0.0;
-    
+
+    printf("%64s %16s %16s %16s\n", "stat", "sequential", "parallel", "faster");
+    printf("%64s %16s %16s %16s\n", "-----", "-----", "-----", "-----");     
     for(int i=0; i<NUM_STATS; i++) {
         double s = s_stats[i];
         double p = p_stats[i];
@@ -148,7 +146,7 @@ int main(int argc, char* argv[]) {
         p_total += p;
     }
     printf("%64s\n", "-----");
-    printf("%64s %16.8f %16.8f %16c\n", "OVERALL", s_total, p_total, (s_total < p_total) ? 's' : 'p');
+    printf("%64s %16.8f %16.8f %16c\n", "TOTAL TIME", s_total, p_total, (s_total < p_total) ? 's' : 'p');
 
 	return 0;
 }
