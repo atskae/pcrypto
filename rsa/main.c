@@ -9,51 +9,30 @@
 #include "utils.h"
 
 int main(int argc, char* argv[]) {
-	
-	printf("Hallo Welt! RSA los gehts!\n");
-	
-    // statistics
-    //printf("Statistics to be collected:\n");
-    //for(int i=0; i<NUM_STATS; i++ ){
-    //    printf("%i: %s\n", i, all_stats[i]);
-    //}
-    double s_stats[NUM_STATS] = {0.0};
-    double p_stats[NUM_STATS] = {0.0};
 
-    //char* message = "Pajama Sam";
-  
-	char* message = "Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam Pajama Sam";
+    // statistics
+    double s_stats[NUM_STATS] = {-1};
+    double p_stats[NUM_STATS] = {-1};
+    clock_t start, end;
+ 
+	char* message = "Pajama Sam";
 	
     // generate two primes, p and q
-	clock_t start = clock();
 	mpz_t p;
 	mpz_init(p);	
 	
 	mpz_t q;
 	mpz_init(q);	
-
-	while(1) {
-		get_rand_prime(p);	
-		get_rand_prime(q);
-	
-		mpz_t pq;
-		mpz_init(pq);
-		mpz_mul(pq, p, q);
-		int num_bits = get_num_bits(pq);	
-		mpz_clear(pq);
-		if(num_bits != 64) continue; // 64-bit blocks
-
-		int result = mpz_cmp(p, q);
-		if(result == 0) continue; // must be different primes 
-		else {
-			//mpz_print("p", p);			
-			//mpz_print("q", q);		
-			break;
-		}
-	}
-    clock_t end = clock();
-	print_elapsed("Getting p and q", start, end);
+    
+	start = clock();
+    get_p_q(p, q);
+	end = clock();
     s_stats[STAT_GET_PQ] = get_seconds(end - start);
+
+    start = clock();
+    p_get_p_q(p, q);
+    end = clock();
+    p_stats[STAT_GET_PQ] = get_seconds(end - start);
 
 	mpz_t pq;
 	mpz_init(pq);
@@ -63,7 +42,6 @@ int main(int argc, char* argv[]) {
 	// convert message to integer blocks
 	int num_blocks;
 	uint64_t* blocks = msg_to_int(message, &num_blocks);
-	//print_blocks(blocks, num_blocks); // each block must be encrypted with rsa
 
 	// the values of the blocks must be less than (p*q - 1)
 	for(int i=0; i<num_blocks; i++) {
@@ -78,19 +56,16 @@ int main(int argc, char* argv[]) {
 	mpz_t d;
 	mpz_init(d);
 	get_d(d, p, q);
-	//mpz_print("d", d);
 
 	mpz_t e;
 	mpz_init(e);
 	get_e(e, p, q, d);
-	//mpz_print("e", e);	
 	
 	// n = p*q
 	mpz_t n;
 	mpz_init(n);
 	mpz_set(n, p);
 	mpz_mul(n, n, q);
-	//mpz_print("n", n);	
 
 	// n must be less tha 2^64, since 64-bit blocks are used
 	int result = mpz_cmp_ui(n, UINT64_MAX);
@@ -123,21 +98,27 @@ int main(int argc, char* argv[]) {
     //printf("Encrypted: %s\n", encrypted);
 
 	/* Let's decrypt! */
+    uint64_t* plaintext_blocks;
+    char* decrypted;
 	
     // sequential
-    uint64_t* plaintext_blocks = rsa(DECRYPT, cipher_blocks, num_blocks, d, n);
-	//print_blocks(plaintext_blocks, num_blocks); // each block must be encrypted with rsa
-	char* decrypted = int_to_msg(plaintext_blocks, num_blocks);
+    start = clock();
+    plaintext_blocks = rsa(DECRYPT, cipher_blocks, num_blocks, d, n);
+	decrypted = int_to_msg(plaintext_blocks, num_blocks);
+    end = clock();
     printf("Sequential decryption correct %i\n", is_correct(message, decrypted, strlen(message)));	
-    //printf("Decrypted: %s\n", decrypted);
+    s_stats[STAT_DECRYPT] = get_seconds(end - start);
 
     free(plaintext_blocks);
     free(decrypted);
 
     // parallel
+    start = clock();
     plaintext_blocks = p_rsa(DECRYPT, cipher_blocks, num_blocks, d, n);
     decrypted = int_to_msg(plaintext_blocks, num_blocks);
+    end = clock();
     printf("Parallel decryption correct %i\n", is_correct(message, decrypted, strlen(message)));
+    p_stats[STAT_DECRYPT] = get_seconds(end - start);
 
 	// clean up when done
 	mpz_clear(p);
@@ -151,10 +132,10 @@ int main(int argc, char* argv[]) {
 
     // print statistics
     printf("%64s %16s %16s %16s\n", "stat", "sequential", "parallel", "faster");
-    printf("%64s %16s %16s %16s\n", "---", "---", "---", "---");
+    printf("%64s %16s %16s %16s\n", "-----", "-----", "-----", "-----");
     for(int i=0; i<NUM_STATS; i++) {
         char faster = (s_stats[i] < p_stats[i]) ? 's' : 'p';
-        printf("%64s %16.5f %16.5f %16c\n", all_stats[i], s_stats[i], p_stats[i], faster);
+        printf("%64s %16.8f %16.8f %16c\n", all_stats[i], s_stats[i], p_stats[i], faster);
     }
 
 	return 0;

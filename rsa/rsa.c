@@ -348,6 +348,28 @@ void get_rand_prime(mpz_t p) {
 	gmp_randclear(state);
 }
 
+void get_p_q(mpz_t p, mpz_t q) {
+    while(1) {
+		get_rand_prime(p);	
+		get_rand_prime(q);
+	
+		mpz_t pq;
+		mpz_init(pq);
+		mpz_mul(pq, p, q);
+		int num_bits = get_num_bits(pq);	
+		mpz_clear(pq);
+		if(num_bits != 64) continue; // 64-bit blocks
+
+		int result = mpz_cmp(p, q);
+		if(result == 0) continue; // must be different primes 
+		else {
+			//mpz_print("p", p);			
+			//mpz_print("q", q);		
+            break;
+		}
+	}
+}
+
 uint64_t* p_rsa(int mode, uint64_t* blocks, int num_blocks, mpz_t e_or_d, mpz_t n) {
 	printf("p_rsa() ");
 	if(mode == ENCRYPT) printf("encrypt\n");
@@ -529,3 +551,26 @@ void p_get_rand_prime(mpz_t p) {
 	mpz_clear(b);
 	gmp_randclear(state);
 }
+
+void p_get_p_q(mpz_t p, mpz_t q) {
+    while(1) {
+		p_get_rand_prime(p);	
+		p_get_rand_prime(q);
+	
+		mpz_t pq;
+		mpz_init(pq);
+		mpz_mul(pq, p, q);
+		int num_bits = get_num_bits(pq);	
+		mpz_clear(pq);
+		if(num_bits != 64) continue; // 64-bit blocks
+
+		int result = mpz_cmp(p, q);
+		if(result == 0) continue; // must be different primes 
+		else {
+			//mpz_print("p", p);			
+			//mpz_print("q", q);		
+            break;
+		}
+	}
+}
+

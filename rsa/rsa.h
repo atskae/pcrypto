@@ -17,9 +17,11 @@ void mpz_print(char* name, mpz_t n);
 void get_rand_prime(mpz_t p);
 void get_d(mpz_t d, mpz_t p, mpz_t q);
 void get_e(mpz_t e, mpz_t p, mpz_t q, mpz_t d);
+void get_p_q(mpz_t p, mpz_t q);
 
 /* Parallel */
 uint64_t* p_rsa(int mode, uint64_t* blocks, int num_blocks, mpz_t e_or_d, mpz_t n);
 void p_get_rand_prime(mpz_t p);
+void p_get_p_q(mpz_t p, mpz_t q);
 
 #endif // RSA_H
