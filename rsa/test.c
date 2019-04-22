@@ -11,7 +11,7 @@
 #include "utils.h"
 
 // number of times to run each experiment
-#define NUM_TRIALS_PQ 5
+#define NUM_TRIALS_PQ 1 // set to one for variable-sized text files
 #define NUM_TRIALS 25
 
 // index into stats 2D array ; S=sequential ; P=parallel
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }  
 
-    printf("Running each experiment for %i trials\n", NUM_TRIALS); 
+    printf("Running each experiment for %i trials ; num prime digits = %i\n", NUM_TRIALS, NUM_DIGITS_P); 
     double stats[2][NUM_STATS] = { {-1} };
     double s_avr = 0.0;
     double p_avr = 0.0;
@@ -50,13 +50,13 @@ int main(int argc, char* argv[]) {
     s_avr = 0.0;
     p_avr = 0.0;
     for(int i=0; i<NUM_TRIALS_PQ; i++) {    
-        printf("%i: get_p_q()\n", i);
+        //printf("%i: get_p_q()\n", i);
         // sequential    
 	    start = clock();
         get_p_q(p, q);
 	    end = clock();
         s_avr += get_seconds(end - start);  
-        printf("Finished sequential %i\n", i);
+        //printf("Finished sequential %i\n", i);
 
         // parallel
         start = clock();

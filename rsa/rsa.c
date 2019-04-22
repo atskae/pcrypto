@@ -301,7 +301,9 @@ void get_rand_prime(mpz_t p) {
 			}
 		}
 	
-		if(tries % 100000 == 0) printf("%lu tries\n", tries);
+		if(DEBUG) {
+            if(tries % 100000 == 0) printf("%lu tries\n", tries);
+        }
 		if(is_prime) break; 
 	}
 	
@@ -348,8 +350,7 @@ uint64_t* p_rsa(int mode, uint64_t* blocks, int num_blocks, mpz_t e_or_d, mpz_t 
 	uint64_t* cipher_blocks = (uint64_t*) malloc(num_blocks * sizeof(uint64_t));
 
 	// will apply rsa to each block
-    //int num_threads = num_blocks/BLOCKS_PER_THREAD + 1;
-    int num_threads = num_blocks;
+    int num_threads = omp_get_num_procs();
     omp_set_num_threads(num_threads); 
     //printf("%i threads requested\n", num_threads);
 
@@ -504,7 +505,9 @@ void p_get_rand_prime(mpz_t p) {
 
         } // #pragma omp parallel
 	
-		if(tries % 100000 == 0) printf("%lu tries\n", tries);
+		if(DEBUG) {
+            if(tries % 100000 == 0) printf("%lu tries\n", tries);
+        }
 		if(prime_test == 0) break; // is a prime	
 		
 	} // while(1) ; end
@@ -551,6 +554,8 @@ uint64_t* p_msg_to_int(char* msg, int* num_blocks) { // msg needs to be less tha
 
 	uint64_t* blocks = (uint64_t*) malloc((*num_blocks) * sizeof(uint64_t));
 
+    int num_threads = omp_get_num_procs();
+    omp_set_num_threads(num_threads); 
     #pragma omp parallel for
 	for(int i=0; i<(*num_blocks); i++) {
 		uint64_t val = 0;

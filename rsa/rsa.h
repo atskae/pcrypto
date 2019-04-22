@@ -9,8 +9,6 @@
 #define ENCRYPT 0
 #define DECRYPT 1
 
-#define BLOCKS_PER_THREAD 256
-
 /* Sequential */
 uint64_t* rsa(int mode, uint64_t* blocks, int num_blocks, mpz_t e_or_d, mpz_t n);
 char* int_to_msg(uint64_t* blocks, int num_blocks);
