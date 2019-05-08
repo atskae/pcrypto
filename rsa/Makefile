@@ -1,5 +1,5 @@
 CC= gcc
-CFLAGS= -Wall -g -fopenmp
+CFLAGS= -Wall -g -fopenmp -std=c99
 DEPS= rsa.h utils.h
 OBJ= rsa.o utils.o
 LIBS= -lgmp -lm
