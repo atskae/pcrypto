@@ -149,7 +149,10 @@ int main(int argc, char* argv[]) {
 	    encrypted = int_to_msg(cipher_blocks, num_blocks);
 	    end = clock();
         s_avr += get_seconds(end - start);
-        
+       
+        // print for demo
+        if(i == 0) printf("==Encrypted==\n%s\n==\n", encrypted);
+ 
         free(cipher_blocks);
         free(encrypted);
  
@@ -188,6 +191,9 @@ int main(int argc, char* argv[]) {
             printf("Decryption failed for sequential\n");
             return 1;
         }
+       
+        // print for demo
+        if(i == 0) printf("==Decrypted==\n%s\n==\n", decrypted);
 
         free(plaintext_blocks);
         free(decrypted);

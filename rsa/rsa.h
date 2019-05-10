@@ -1,7 +1,7 @@
 #ifndef RSA_H
 #define RSA_H
 
-#define NUM_DIGITS_P 12
+#define NUM_DIGITS_P 10
 
 #define BLOCK_SIZE_BITS 64
 #define CHARS_PER_BLOCK (BLOCK_SIZE_BITS / 8)
